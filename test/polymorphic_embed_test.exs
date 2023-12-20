@@ -5,7 +5,7 @@ defmodule PolymorphicEmbedTest do
 
   import Phoenix.Component
   import Phoenix.HTML
-  use PhoenixHTMLHelpers
+  import Phoenix.HTML.Form
   import Phoenix.LiveViewTest
   import PolymorphicEmbed.HTML.Form
 
