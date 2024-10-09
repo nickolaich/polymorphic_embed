@@ -34,3 +34,4 @@ polymorphic_embed-*.tar
 
 tmp.*
 tmp/
+config/*.secret.exs

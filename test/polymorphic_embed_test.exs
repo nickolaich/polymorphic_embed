@@ -6,6 +6,7 @@ defmodule PolymorphicEmbedTest do
   import Phoenix.Component
   import Phoenix.HTML
   import PhoenixHTMLHelpers.Form
+
   import Phoenix.LiveViewTest
   import PolymorphicEmbed.HTML.Form
   import PolymorphicEmbed.HTML.Component
@@ -1616,7 +1617,7 @@ defmodule PolymorphicEmbedTest do
     struct(reminder_module,
       date: ~U[2020-05-28 02:57:19Z],
       text: "This is an SMS reminder",
-      channel:
+      channel_raise:
         struct(sms_module,
           country_code: 1,
           number: "02/807.05.53"
@@ -1627,7 +1628,7 @@ defmodule PolymorphicEmbedTest do
 
     Ecto.Adapters.SQL.query!(
       Repo,
-      "UPDATE reminders SET channel = jsonb_set(channel, '{my_type_field}', '\"foo\"')",
+      "UPDATE reminders SET channel_raise = jsonb_set(channel_raise, '{my_type_field}', '\"foo\"')",
       []
     )
 
@@ -1637,6 +1638,7 @@ defmodule PolymorphicEmbedTest do
       |> Repo.one()
     end
   end
+
 
   test "cannot load the right struct but don't raise exception" do
     generator = :polymorphic
@@ -1662,6 +1664,35 @@ defmodule PolymorphicEmbedTest do
     )
 
     assert %{channel: %{"my_type_field" => "some_deprecated_type"}} =
+             reminder_module
+             |> QueryBuilder.where(text: "This is an SMS reminder")
+             |> Repo.one()
+  end
+
+  test "cannot load the right struct and nilify it" do
+    generator = :polymorphic
+    reminder_module = get_module(Reminder, generator)
+    sms_module = get_module(Channel.SMS, generator)
+
+    struct(reminder_module,
+      date: ~U[2020-05-28 02:57:19Z],
+      text: "This is an SMS reminder",
+      channel_nilify:
+        struct(sms_module,
+          country_code: 1,
+          number: "02/807.05.53"
+        )
+    )
+    |> reminder_module.changeset(%{})
+    |> Repo.insert()
+
+    Ecto.Adapters.SQL.query!(
+      Repo,
+      "UPDATE reminders SET channel_nilify = jsonb_set(channel_nilify, '{my_type_field}', '\"foo\"')",
+      []
+    )
+    # struct was unpacked and was nilified
+    assert %{channel_nilify: nil} =
              reminder_module
              |> QueryBuilder.where(text: "This is an SMS reminder")
              |> Repo.one()

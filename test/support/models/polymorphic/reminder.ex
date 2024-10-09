@@ -25,6 +25,32 @@ defmodule PolymorphicEmbed.Reminder do
       retain_unlisted_types_on_load: [:some_deprecated_type]
     )
 
+    polymorphic_embeds_one(:channel_raise,
+      types: [
+        sms: PolymorphicEmbed.Channel.SMS,
+        email: [
+          module: PolymorphicEmbed.Channel.Email,
+          identify_by_fields: [:address, :confirmed]
+        ]
+      ],
+      on_replace: :update,
+      on_type_not_found: :raise,
+      type_field: :my_type_field
+    )
+    polymorphic_embeds_one(:channel_nilify,
+      types: [
+        sms: PolymorphicEmbed.Channel.SMS,
+        email: [
+          module: PolymorphicEmbed.Channel.Email,
+          identify_by_fields: [:address, :confirmed]
+        ]
+      ],
+      on_replace: :update,
+      on_type_not_found: :nilify,
+      type_field: :my_type_field
+    )
+
+
     polymorphic_embeds_one(:channel2,
       types: [
         sms: PolymorphicEmbed.Channel.SMS,
@@ -87,6 +113,8 @@ defmodule PolymorphicEmbed.Reminder do
     |> cast(values, [:date, :text, :type])
     |> validate_required(:date)
     |> cast_polymorphic_embed(:channel)
+    |> cast_polymorphic_embed(:channel_raise)
+    |> cast_polymorphic_embed(:channel_nilify)
     |> cast_polymorphic_embed(:channel2)
     |> cast_polymorphic_embed(:channel3)
     |> cast_polymorphic_embed(:channel4)

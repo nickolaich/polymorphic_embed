@@ -14,6 +14,8 @@ defmodule PolymorphicEmbed.CreateTables do
       add(:event_id, references(:events))
 
       add(:channel, :map)
+      add(:channel_raise, :map)
+      add(:channel_nilify, :map)
       add(:channel2, :map)
       add(:channel3, :map)
       add(:channel4, :map)

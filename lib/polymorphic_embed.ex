@@ -468,11 +468,23 @@ defmodule PolymorphicEmbed do
   defp maybe_apply_changes(%Changeset{valid?: false} = changeset), do: changeset
 
   @impl true
-  def cast(_data, _params),
-    do:
+  def cast(_data, _params) do
+    if ex_machina_call?() do
+      # it's not possible to insert data easy via ex-machina, set nil and setup data through Ecto/Repo
+      {:ok, nil}
+    else
       raise(
         "#{__MODULE__} must not be casted using Ecto.Changeset.cast/4, use #{__MODULE__}.cast_polymorphic_embed/2 instead."
       )
+    end
+  end
+
+  defp ex_machina_call? do
+    self()
+    |> Process.info(:current_stacktrace)
+    |> elem(1)
+    |> Enum.any?(&(elem(&1, 0) == ExMachina.EctoStrategy))
+  end
 
   @impl true
   def embed_as(_format, _params), do: :dump
@@ -501,7 +513,11 @@ defmodule PolymorphicEmbed do
 
         type = Map.get(data, type_field_name |> to_string)
 
+        on_type_not_found = Map.get(field_opts, :on_type_not_found)
+
         cond do
+          on_type_not_found == :nilify ->
+            {:ok, nil}
           type in retain_type_list ->
             {:ok, data}
 
