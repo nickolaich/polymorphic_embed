@@ -1691,7 +1691,7 @@ defmodule PolymorphicEmbedTest do
       "UPDATE reminders SET channel_nilify = jsonb_set(channel_nilify, '{my_type_field}', '\"foo\"')",
       []
     )
-    # struct was unpacked and was nilified
+    # struct was unpacked and was set to nil
     assert %{channel_nilify: nil} =
              reminder_module
              |> QueryBuilder.where(text: "This is an SMS reminder")
