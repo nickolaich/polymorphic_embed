@@ -142,8 +142,9 @@ defmodule PolymorphicEmbed do
 
     required = Keyword.get(cast_opts, :required, false)
     with = Keyword.get(cast_opts, :with, nil)
+    default_with = Keyword.get(cast_opts, :default_with, nil)
 
-    changeset_fun = &changeset_fun(&1, &2, with, types_metadata)
+    changeset_fun = &changeset_fun(&1, &2, with, default_with, types_metadata)
 
     # used for sort_param and drop_param support for many embeds
     sort = param_value_for_cast_opt(:sort_param, cast_opts, changeset.params)
@@ -292,7 +293,7 @@ defmodule PolymorphicEmbed do
 
   defp key_as_int(key_val), do: key_val
 
-  defp changeset_fun(struct, params, with, types_metadata) when is_list(with) do
+  defp changeset_fun(struct, params, with, default_with, types_metadata) when is_list(with) do
     type = do_get_polymorphic_type(struct, types_metadata)
 
     case Keyword.get(with, type) do
@@ -300,14 +301,19 @@ defmodule PolymorphicEmbed do
         apply(module, function_name, [struct, params | args])
 
       nil ->
-        struct.__struct__.changeset(struct, params)
+        # may be apply defaults
+        changeset_fun(struct, params, nil, default_with, types_metadata)
 
       fun ->
         apply(fun, [struct, params])
     end
   end
 
-  defp changeset_fun(struct, params, nil, _) do
+
+  defp changeset_fun(struct, params, nil, default_with, _) when is_function(default_with) do
+    apply(default_with, [struct, params])
+  end
+  defp changeset_fun(struct, params, nil, nil, _) do
     struct.__struct__.changeset(struct, params)
   end
 
